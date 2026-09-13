@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TaskFlowAPI.Data;
 using TaskFlowAPI.Model;
 
 namespace TaskFlowAPI.Controllers
@@ -7,18 +9,25 @@ namespace TaskFlowAPI.Controllers
     [Route("api/[controller]")]
     public class TaskController : ControllerBase
     {
-        private static List<TaskItem> tasks = new List<TaskItem>();
+        private readonly AppDbContext _context;
+        
+        public TaskController(AppDbContext context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<TaskItem>> GetTasks()
+        public async Task<IActionResult> GetAll()
         {
+            var tasks = await _context.Tasks.ToListAsync();
+
             return Ok(tasks);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<TaskItem> GetTask(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var task = tasks.FirstOrDefault(t => t.Id == id);
+            var task = await _context.Tasks.FindAsync(id);
             if (task == null)
                 return NotFound();
 
@@ -26,37 +35,50 @@ namespace TaskFlowAPI.Controllers
         }
 
         [HttpPost]
-        public ActionResult AddTask(TaskItem task)
+        public async Task<IActionResult> Create(TaskItem task)
         {
-            task.Id = tasks.Count + 1;
-            tasks.Add(task);
-            return CreatedAtAction(nameof(GetTasks), new { id = task.Id }, task);
+            _context.Tasks.Add(task);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(task);
         }
 
         [HttpPut("{id}")]
-        public ActionResult UpdateTask(int id, TaskItem UpdatedTask)
+        public async Task<IActionResult> Update(int id, TaskItem updatedTask)
         {
-            var task = tasks.FirstOrDefault(t => t.Id == id);
+            var task = await _context.Tasks.FindAsync(id);
+
             if (task == null)
+            {
                 return NotFound();
+            }
 
-            task.Title = UpdatedTask.Title;
-            task.IsCompleted = UpdatedTask.IsCompleted;
+            task.Title = updatedTask.Title;
+            task.IsCompleted = updatedTask.IsCompleted;
 
-            return Accepted();
+            await _context.SaveChangesAsync();
+
+            return Ok(task);
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteTask(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var task = tasks.FirstOrDefault(t => t.Id == id);
-            if (task == null)
-                return NotFound();
+            var task = await _context.Tasks.FindAsync(id);
 
-            tasks.Remove(task);
-            return Accepted();
+            if (task == null)
+            {
+                return NotFound();
+            }
+
+            _context.Tasks.Remove(task);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
-        
+
     }
 }
