@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlowAPI.Data;
-using TaskFlowAPI.Model;
 using TaskFlowAPI.DTOs;
+using TaskFlowAPI.Model;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -20,7 +21,13 @@ namespace TaskFlowAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var tasks = await _context.Tasks.ToListAsync();
+            var tasks = await _context.Tasks
+                .Select(task => new TaskResponseDto
+                {
+                    Title = task.Title,
+                    IsCompleted = task.IsCompleted
+                })
+                .ToListAsync();
 
             return Ok(tasks);
         }
@@ -32,7 +39,13 @@ namespace TaskFlowAPI.Controllers
             if (task == null)
                 return NotFound();
 
-            return Ok(task);
+            var response = new TaskResponseDto
+            {
+                Title = task.Title,
+                IsCompleted = task.IsCompleted
+            };
+
+            return Ok(response);
         }
 
         [HttpPost]
@@ -48,7 +61,17 @@ namespace TaskFlowAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(task);
+            var response = new TaskResponseDto
+            {
+                Title = task.Title,
+                IsCompleted = task.IsCompleted,
+            };
+
+            return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = task.Id},
+                    response
+                );
         }
 
         [HttpPut("{id}")]
@@ -66,7 +89,13 @@ namespace TaskFlowAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(task);
+            var response = new TaskResponseDto
+            {
+                Title = task.Title,
+                IsCompleted = task.IsCompleted
+            };
+
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]
