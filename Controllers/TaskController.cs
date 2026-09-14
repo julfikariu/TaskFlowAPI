@@ -25,6 +25,7 @@ namespace TaskFlowAPI.Controllers
                 .Select(task => new TaskResponseDto
                 {
                     Title = task.Title,
+                    Description = task.Description,
                     IsCompleted = task.IsCompleted
                 })
                 .ToListAsync();
@@ -42,6 +43,7 @@ namespace TaskFlowAPI.Controllers
             var response = new TaskResponseDto
             {
                 Title = task.Title,
+                Description = task.Description,
                 IsCompleted = task.IsCompleted
             };
 
@@ -54,6 +56,8 @@ namespace TaskFlowAPI.Controllers
             var task = new TaskItem
             {
                 Title = dto.Title,
+                ProjectId = dto.ProjectId,
+                Description= dto.Description,
                 IsCompleted = dto.IsCompleted,
             };
 
@@ -64,6 +68,8 @@ namespace TaskFlowAPI.Controllers
             var response = new TaskResponseDto
             {
                 Title = task.Title,
+                ProjectId = task.ProjectId,
+                Description = dto.Description,
                 IsCompleted = task.IsCompleted,
             };
 
@@ -92,6 +98,7 @@ namespace TaskFlowAPI.Controllers
             var response = new TaskResponseDto
             {
                 Title = task.Title,
+                Description = task.Description,
                 IsCompleted = task.IsCompleted
             };
 

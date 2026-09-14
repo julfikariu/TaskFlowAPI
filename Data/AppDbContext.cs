@@ -11,5 +11,18 @@ namespace TaskFlowAPI.Data
         }
 
         public DbSet<TaskItem> Tasks { get; set; }
+        public DbSet<Project> Projects { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<TaskItem>()
+                .HasOne(task => task.Project)
+                .WithMany(project => project.Tasks)
+                .HasForeignKey(task => task.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+
     }
 }
