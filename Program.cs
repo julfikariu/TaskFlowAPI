@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using TaskFlowAPI.Data;
+using TaskFlowAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,8 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API documentation created using Task API"
     });
 });
+
+builder.Services.AddScoped<ITaskService, TaskService>();
 
 var app = builder.Build();
 

@@ -1,9 +1,8 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Model;
+using TaskFlowAPI.Services;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -11,26 +10,17 @@ namespace TaskFlowAPI.Controllers
     [Route("api/[controller]")]
     public class TaskController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ITaskService _taskService;
         
-        public TaskController(AppDbContext context)
+        public TaskController(ITaskService taskService)
         {
-            _context = context;
+            _taskService = taskService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var tasks = await _context.Tasks
-                .Select(task => new TaskResponseDto
-                {
-                    Id = task.Id,
-                    ProjectId = task.ProjectId,
-                    Title = task.Title,
-                    Description = task.Description,
-                    IsCompleted = task.IsCompleted
-                })
-                .ToListAsync();
+            var tasks = await _taskService.GetAllAsync();
 
             return Ok(tasks);
         }
@@ -38,43 +28,22 @@ namespace TaskFlowAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var task = await _context.Tasks.FindAsync(id);
+            var task = await _taskService.GetByIdAsync(id);
             if (task == null)
                 return NotFound();
 
-            var response = new TaskResponseDto
-            {
-                Id = task.Id,
-                ProjectId = task.ProjectId,
-                Title = task.Title,
-                Description = task.Description,
-                IsCompleted = task.IsCompleted
-            };
-
-            return Ok(response);
+            return Ok(task);
         }
 
         [HttpGet("/api/projects/{projectId}/tasks")]
         public async Task<IActionResult> GetTasksByProject(int projectId)
         {
-            var projectExists = await _context.Projects
-               .AnyAsync(project => project.Id == projectId);
-            if (!projectExists)
+            var tasks = await _taskService.GetTasksByProjectAsync(projectId);
+     
+            if (tasks == null)
             {
-                return NotFound();
+                return NotFound("Project Id not found");
             }
-
-            var tasks = await _context.Tasks
-                .Where(task => task.ProjectId == projectId)
-                .Select(task => new TaskResponseDto
-                {
-                    Id = task.Id,
-                    ProjectId = task.ProjectId,
-                    Title = task.Title,
-                    Description = task.Description,
-                    IsCompleted = task.IsCompleted
-                })
-                .ToListAsync();
 
             return Ok(tasks);
         }
@@ -82,81 +51,42 @@ namespace TaskFlowAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateTaskDto dto)
         {
-            var projectExists = await _context.Projects
-                .AnyAsync(project => project.Id == dto.ProjectId);
-            if (!projectExists)
+            var task = await _taskService.CreateAsync(dto);
+            
+            if (task == null)
             {
-                return NotFound();
+                return NotFound("Project Not Found");
             }
 
-            var task = new TaskItem
-            {
-                Title = dto.Title,
-                ProjectId = dto.ProjectId,
-                Description= dto.Description,
-                IsCompleted = dto.IsCompleted,
-            };
-
-            _context.Tasks.Add(task);
-
-            await _context.SaveChangesAsync();
-
-            var response = new TaskResponseDto
-            {
-                Id = task.Id,
-                Title = task.Title,
-                ProjectId = task.ProjectId,
-                Description = dto.Description,
-                IsCompleted = task.IsCompleted,
-            };
-
             return CreatedAtAction(
-                    nameof(GetById),
-                    new { id = task.Id},
-                    response
-                );
+                nameof(GetById),
+                new { id = task.Id},
+                task
+            );
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UpdateTaskDto dto)
         {
-            var task = await _context.Tasks.FindAsync(id);
+            var task = await _taskService.UpdateAsync(id, dto);
 
             if (task == null)
             {
                 return NotFound();
             }
 
-            task.Title = dto.Title;
-            task.IsCompleted = dto.IsCompleted;
-
-            await _context.SaveChangesAsync();
-
-            var response = new TaskResponseDto
-            {
-                Id = task.Id,
-                ProjectId = task.ProjectId,
-                Title = task.Title,
-                Description = task.Description,
-                IsCompleted = task.IsCompleted
-            };
-
-            return Ok(response);
+            return Ok(task);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var task = await _context.Tasks.FindAsync(id);
+            var deleted = await _taskService.DeleteAsync(id);
 
-            if (task == null)
+            if (!deleted)
             {
                 return NotFound();
             }
-
-            _context.Tasks.Remove(task);
-
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }
