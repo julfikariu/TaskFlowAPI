@@ -24,6 +24,8 @@ namespace TaskFlowAPI.Controllers
             var tasks = await _context.Tasks
                 .Select(task => new TaskResponseDto
                 {
+                    Id = task.Id,
+                    ProjectId = task.ProjectId,
                     Title = task.Title,
                     Description = task.Description,
                     IsCompleted = task.IsCompleted
@@ -42,6 +44,8 @@ namespace TaskFlowAPI.Controllers
 
             var response = new TaskResponseDto
             {
+                Id = task.Id,
+                ProjectId = task.ProjectId,
                 Title = task.Title,
                 Description = task.Description,
                 IsCompleted = task.IsCompleted
@@ -50,9 +54,41 @@ namespace TaskFlowAPI.Controllers
             return Ok(response);
         }
 
+        [HttpGet("/api/projects/{projectId}/tasks")]
+        public async Task<IActionResult> GetTasksByProject(int projectId)
+        {
+            var projectExists = await _context.Projects
+               .AnyAsync(project => project.Id == projectId);
+            if (!projectExists)
+            {
+                return NotFound();
+            }
+
+            var tasks = await _context.Tasks
+                .Where(task => task.ProjectId == projectId)
+                .Select(task => new TaskResponseDto
+                {
+                    Id = task.Id,
+                    ProjectId = task.ProjectId,
+                    Title = task.Title,
+                    Description = task.Description,
+                    IsCompleted = task.IsCompleted
+                })
+                .ToListAsync();
+
+            return Ok(tasks);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(CreateTaskDto dto)
         {
+            var projectExists = await _context.Projects
+                .AnyAsync(project => project.Id == dto.ProjectId);
+            if (!projectExists)
+            {
+                return NotFound();
+            }
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -67,6 +103,7 @@ namespace TaskFlowAPI.Controllers
 
             var response = new TaskResponseDto
             {
+                Id = task.Id,
                 Title = task.Title,
                 ProjectId = task.ProjectId,
                 Description = dto.Description,
@@ -97,6 +134,8 @@ namespace TaskFlowAPI.Controllers
 
             var response = new TaskResponseDto
             {
+                Id = task.Id,
+                ProjectId = task.ProjectId,
                 Title = task.Title,
                 Description = task.Description,
                 IsCompleted = task.IsCompleted
