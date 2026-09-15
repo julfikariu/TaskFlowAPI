@@ -5,7 +5,7 @@ namespace TaskFlowAPI.DTOs.Project
     public class CreateProjectDto
     {
         [Required]
-        [StringLength(150)]
+        [StringLength(100, MinimumLength = 3)]
         public string Name { get; set; } = string.Empty;
 
         [StringLength(1000)]

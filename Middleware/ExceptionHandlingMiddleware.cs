@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace TaskFlowAPI.Middleware
 {
@@ -26,16 +27,18 @@ namespace TaskFlowAPI.Middleware
         {
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/problem+json";
 
-            var response = new
+            var problem = new ProblemDetails
             {
-                statusCode = 500,
-                message = "An unexpected error occurred."
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "Internal Server Error",
+                Detail = "An unexpected error occurred."
             };
+            problem.Extensions["traceId"] = context.TraceIdentifier;
 
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response)
+                JsonSerializer.Serialize(problem)
             );
         }
 
