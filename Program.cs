@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using TaskFlowAPI.Data;
+using TaskFlowAPI.Middleware;
 using TaskFlowAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,9 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<ITaskService, TaskService>();
 
 var app = builder.Build();
+
+// Register exception middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

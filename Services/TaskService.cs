@@ -126,7 +126,7 @@ namespace TaskFlowAPI.Services
         public async Task<bool> DeleteAsync(int id)
         {
             var task = await _context.Tasks.FindAsync(id);
-            if (task != null)
+            if (task == null)
             {
                 return false;
             }
