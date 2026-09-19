@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Model;
+using TaskFlowAPI.Services;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -11,10 +11,12 @@ namespace TaskFlowAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAuthService _authService;
 
-        public AuthController(UserManager<ApplicationUser> userManager)
+        public AuthController(UserManager<ApplicationUser> userManager, IAuthService authService)
         {
             _userManager = userManager;
+            _authService = authService;
         }
 
         [HttpPost("register")]
@@ -39,6 +41,25 @@ namespace TaskFlowAPI.Controllers
                 message = "User registered successfully."
             });
 
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDto dto)
+        {
+            var token = await _authService.LoginAsync(dto);
+
+            if (token == null)
+            {
+                return Unauthorized(new
+                {
+                    message = "Invalid email or password."
+                });
+            }
+
+            return Ok(new
+            {
+                accessToken = token
+            });
         }
     }
 }

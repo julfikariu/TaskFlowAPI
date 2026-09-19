@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs.Project;
@@ -6,7 +7,9 @@ using TaskFlowAPI.Model;
 
 namespace TaskFlowAPI.Controllers
 {
+
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class ProjectsController : ControllerBase
     {

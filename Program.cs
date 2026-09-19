@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text;
 using TaskFlowAPI.Data;
 using TaskFlowAPI.Middleware;
 using TaskFlowAPI.Model;
@@ -30,6 +33,32 @@ builder.Services
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSettings = builder.Configuration
+            .GetSection("Jwt");
+
+        var key = jwtSettings["Key"]!;
+
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(key)
+                )
+            };
+    });
+
 // Register swagger service
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -40,14 +69,34 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description = "API documentation created using Task API"
     });
+
+    options.AddSecurityDefinition(
+      "Bearer",
+      new OpenApiSecurityScheme
+      {
+          Name = "Authorization",
+          Type = SecuritySchemeType.Http,
+          Scheme = "bearer",
+          BearerFormat = "JWT",
+          In = ParameterLocation.Header,
+          Description = "Enter your JWT token."
+      });
+
+    options.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] =
+                []
+        });
 });
 
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
 // Register exception middleware
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+//app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
