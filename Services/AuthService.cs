@@ -42,12 +42,14 @@ namespace TaskFlowAPI.Services
                 return null;
             }
 
+            var roles = await _userManager.GetRolesAsync(user);
+
             return await GenerateTokenAsync(user);
         }
 
         private async Task<string> GenerateTokenAsync(ApplicationUser user)
         {
-            // ১. Configuration রিড করার সবচেয়ে নিরাপদ উপায়
+            // 1. Read Configuration 
             var keyString = _configuration["Jwt:Key"];
             var issuer = _configuration["Jwt:Issuer"];
             var audience = _configuration["Jwt:Audience"];
@@ -55,24 +57,24 @@ namespace TaskFlowAPI.Services
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            // ২. Claims লিস্ট তৈরি
+            // 2. Make Claims list
             var claims = new List<Claim>
-    {
-        new(ClaimTypes.NameIdentifier, user.Id), // Sub এর বদলে NameIdentifier ব্যবহার করা ASP.NET Core এর জন্য স্ট্যান্ডার্ড
-        new(ClaimTypes.Email, user.Email ?? ""),
-        new(ClaimTypes.Name, user.FullName ?? "")
-    };
+            {
+                new(ClaimTypes.NameIdentifier, user.Id), 
+                new(ClaimTypes.Email, user.Email ?? ""),
+                new(ClaimTypes.Name, user.FullName ?? "")
+            };
 
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            // ৩. Key এবং Credentials তৈরি
+            // 4. Generate Key and Credentials
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // ৪. Token Descriptor ব্যবহার করা (Modern & Recommended Approach)
+            // ৪. Use Token Descriptor (Modern & Recommended Approach)
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
@@ -84,12 +86,13 @@ namespace TaskFlowAPI.Services
 
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            // Claim Names যেন বদলে না যায় তার জন্য এটি বন্ধ রাখা ভালো
+            // Close Claim Names, since its not altered
             tokenHandler.InboundClaimTypeMap.Clear();
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);
-        }
+        } 
+
     }
 }

@@ -95,6 +95,19 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider
+        .GetRequiredService<RoleManager<IdentityRole>>();
+
+    var userManager = scope.ServiceProvider
+        .GetRequiredService<UserManager<ApplicationUser>>();
+
+    await DbSeeder.SeedRolesAsync(roleManager);
+
+    await DbSeeder.SeedAdminAsync(userManager);
+}
+
 // Register exception middleware
 //app.UseMiddleware<ExceptionHandlingMiddleware>();
 
