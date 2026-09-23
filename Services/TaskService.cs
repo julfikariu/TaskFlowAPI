@@ -21,6 +21,7 @@ namespace TaskFlowAPI.Services
                 {
                     Id = task.Id,
                     ProjectId = task.ProjectId,
+                    ProjectName = task.Project.Name,
                     Title = task.Title,
                     Description = task.Description,
                     IsCompleted = task.IsCompleted
